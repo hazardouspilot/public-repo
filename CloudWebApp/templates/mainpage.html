@@ -1,0 +1,54 @@
+<h1>Main Page</h1>
+
+<p>User: {{ active_user }}</p>
+
+<p>Subscriptions: </p>
+
+{% for song in list_songs %}
+
+    <p>Title: {{ song.title }}</p>
+    <p>Artist: {{ song.artist }}</p>
+    <p>Year: {{ song.year }}</p>
+    <img src="{{ song.img_url }}"> 
+
+    <form action="{{ url_for('removeSong') }}" method="post">
+        <input type="hidden" name="title" value="{{ song.title }}">
+        <input type="submit" value="Remove">
+    </form>
+
+{% endfor %}
+
+<p>Query: </p>
+
+<form action="{{ url_for('mainpage') }}" method="post">
+    <label for="title">Title: </label>
+    <input type="text" name="title">
+    <br>
+    <label for="year">Year: </label>
+    <input type="number" name="year">
+    <br>
+    <label for="artist">Artist: </label>
+    <input type="text" name="artist">
+    <br>
+    <input type="submit" value="Query">
+</form>
+
+{% for message in get_flashed_messages() %}
+<h2>{{ message }}</h2>
+{% endfor %}
+
+{% for song in queried_songs %}
+
+    <p>Title: {{ song.title }}</p>
+    <p>Artist: {{ song.artist }}</p>
+    <p>Year: {{ song.year }}</p>
+    <img src="{{ song.img_url }}"> 
+
+    <form action="{{ url_for('addSong') }}" method="post">
+        <input type="hidden" name="title" value="{{ song.title }}">
+        <input type="submit" value="Subscribe">
+    </form>
+
+{% endfor %}
+
+<p><a href="{{ url_for('home') }}">Log Out</a></p>

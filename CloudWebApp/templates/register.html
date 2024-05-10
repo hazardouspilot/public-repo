@@ -1,0 +1,20 @@
+<h1>Register Page</h1>
+
+{% for message in get_flashed_messages() %}
+<h2>{{ message }}</h2>
+{% endfor %}
+
+<form action="{{ url_for('register') }}" method="post">
+    <label for="email">Email: </label>
+    <input type="email" name="email" required>
+    <br>
+    <label for="username">Username: </label>
+    <input type="text" name="username" required>
+    <br>
+    <label for="password">Password: </label>
+    <input type="password" name="password" required>
+    <br>
+    <input type="submit" value="Register">
+</form>
+
+<p><a href="{{ url_for('home') }}">Log In</a></p>
