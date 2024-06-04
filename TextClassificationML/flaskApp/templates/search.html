@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1>Find a Job Listing</h1>
+
+{% for message in get_flashed_messages() %}
+
+    <h2>{{ message }}</h2>
+
+{% endfor %}
+
+<form action="{{ url_for('search') }}" method="post">
+    <label for="keyword">Enter a search keyword: </label>
+    <input type="text" name="keyword" required>
+    <br>
+    <input type="submit" value="Search">
+</form>
+
+{% if n_matching_jobs > 0 %}
+
+<p>Number of matching jobs: {{ n_matching_jobs }}</p>
+
+{% endif %}
+
+{% if n_matching_jobs > n_jobs %}
+
+<p>First {{ n_jobs }} matching jobs:</p>
+
+{% elif n_matching_jobs > 0 %}
+
+<p>Matching jobs:</p>
+
+{% endif %}
+
+{% for job in matching_jobs %}
+    <p>Job Title: {{ job['title'] }}</p>
+    <p>Company: {{ job['company'] }}</p>
+    <p>Category: {{ job['category'] }}</p>
+
+    <a href="{{ url_for('listings', job_id=job['id']) }}">View Job</a>
+
+{% endfor %}
+
+{% endblock %}

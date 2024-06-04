@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1>Create a new job listing</h1>
+
+{% if not title %}
+
+<p>Enter the details of the job here: </p>
+
+<form action="{{ url_for('create') }}" method="post">
+    <label for="title">Title: </label>
+    <input type="text" name="title" required>
+    <br>
+    <label for="company">Company: </label>
+    <input type="text" name="company" required>
+    <br>
+    <label for="description">Job Description: </label>
+    <input type="text" name="description" required>
+    <br>
+    <input type="submit" value="Proceed">
+</form>
+
+{% endif %}
+
+{% if title %}
+    <p>Title: {{ title }}</p>
+    <p>Company: {{ company }}</p>
+    <p>Description: {{ description }}</p>
+    <p>Based on the job's title and description, Harry predicts the category should be: </p>
+    <p>{{ category_rec }}</p>
+
+    <form action="{{ url_for('create') }}" method="post">
+        <label for="category">Category: </label><br>
+        <select id="category" name="category" required>
+            {% if category_rec == 'Engineering' %}
+            <option value="Engineering" selected>Engineering</option>
+            {% else %}
+            <option value="Engineering">Engineering</option>
+            {% endif %}
+
+            {% if category_rec == 'Healthcare_Nursing' %}
+            <option value="Healthcare_Nursing" selected>Healthcare and Nursing</option>
+            {% else %}
+            <option value="Healthcare_Nursing">Healthcare and Nursing</option>
+            {% endif %}
+
+            {% if category_rec == 'Accounting_Finance' %}
+            <option value="Accounting_Finance" selected>Accounting and Finance</option>
+            {% else %}
+            <option value="Accounting_Finance">Accounting and Finance</option>
+            {% endif %}
+
+            {% if category_rec == 'Sales' %}
+            <option value="sales" selected>Sales</option>
+            {% else %}
+            <option value="sales">Sales</option>
+            {% endif %}
+        </select><br>
+
+        <input type="submit" value="Submit Listing">
+    </form>
+{% endif %}
+
+{% endblock %}
