@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name ec2-54-198-219-216.compute-1.amazonaws.com;
+    server_name <DNS address for EC2>;
 
     index index.html index.htm index.nginx-debian.html home.html mainpage.html register.html;
 
