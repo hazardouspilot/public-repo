@@ -2,6 +2,10 @@ This is a simple web app for searching through a library of songs and modifying 
 The app uses Flask and AWS cloud services including an EC2 instance (compute), DynamoDB, an S3 Bucket (storage), 
 Lambda functions and API Gateway. 
 
+The archived folder contains python code files for lambda functions, java code files for database and S3 bucket creation 
+and loading, auxiliary code used to check uniqueness of candidate keys as well as a version of the app before implemnting 
+RESTful APIs
+
 Instructions for running app on AWS
 
 Create EC2 instance:
