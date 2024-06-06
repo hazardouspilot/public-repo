@@ -1,12 +1,16 @@
+This is a simple web app for searching through a library of songs and modifying the list of songs you are subscibed to. 
+The app uses Flask and AWS cloud services including an EC2 instance (compute), DynamoDB, an S3 Bucket (storage), 
+Lambda functions and API Gateway. 
+
 Instructions for running app on AWS
 
 Create EC2 instance:
  - IAM instance profile: select LabInstanceProfile
 
-Link via SSH (PuTTY) to EC2:
+Configuration settings to link via SSH (PuTTY) to EC2:
  - private key = .ppk file, hostname = ubuntu@[your_instance_public_DNS], connection 300s
 
-Install stuff on EC2 instance (putty):
+Install stuff on EC2 instance (putty) using these command line instructions:
 mkdir <projdir>
 cd <projdir>
 sudo apt update
@@ -35,7 +39,7 @@ pipenv install gunicorn
 pipenv install requests
 
 Filezilla:
-File-site manager-new site
+File->site manager->new site
 SFTP
 host=[your_instance_public_DNS]
 port=22
@@ -46,7 +50,7 @@ connect
 
 place app.py and template folder into /home/ubuntu/<projdir>
 
-Modify configuration (Putty)
+Modify configuration (Putty):
 sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/<projdir>
 sudo nano /etc/nginx/sites-available/<projdir>
 server {
@@ -71,7 +75,6 @@ sudo rm /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 gunicorn "app:app" -b 0.0.0.0 --daemon
-
 
 If EC2 already running with installations and configurations:
 
