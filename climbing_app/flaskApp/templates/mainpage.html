@@ -1,6 +1,18 @@
+{% extends 'layout.html' %}
+
+{% block title %}Mainpage{% endblock %}
+
+{% block content %}
+
 <h1>Main Menu</h1>
 
-<p>Current user: {{ user }}</p>
+{% if msg %}
+
+<p>{{ msg }}</p>
+
+{% endif %}
+
+<p>Current user: {{ session['user'] }}</p>
 
 <form action="{{ url_for('add_attempt') }}" method="get">
     <input type="submit" value="Add a new attempt">
@@ -29,3 +41,5 @@
 <form action="{{ url_for('logout') }}" method="get">
     <input type="submit" value="Logout">
 </form>
+
+{% endblock %}

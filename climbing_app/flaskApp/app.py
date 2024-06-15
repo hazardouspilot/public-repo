@@ -5,9 +5,6 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from Database_Class import BWDB
 from datetime import datetime
 from util import hash_pass, verify_pass
-#from flask_mysqldb import MySQL # type: ignore
-# import MySQLdb.cursors
-# import MySQLdb.cursors, re #, hashlib
 
 app = Flask(__name__)
 
@@ -26,7 +23,7 @@ db = BWDB(
 @app.route('/', methods=['GET', 'POST'])
 def home():
     # Output message if something goes wrong...
-    msg = ''
+    msg = False
     email = ''
     # Check if "username" and "password" POST requests exist (user submitted form)
     if request.method == 'POST':
@@ -45,6 +42,7 @@ def home():
             #if password matches, update session details and go to main page
             if verify_pass(password,climber[1]):
                 session['user'] = climber[0]
+                session['email'] = email
                 session['loggedin'] = True
                 return render_template('mainpage.html')
             #otherwise update error message
@@ -108,41 +106,29 @@ def register():
             return render_template('home.html', msg=msg)
     return render_template('register.html', msg=msg, email=email)
 
-@app.route('/reset_password', methods=['GET', 'POST'])
-def reset():
-    #add post functionality to verify existing password and update pass in climbers table
-    return render_template('reset_password.html')
-
 @app.route('/mainpage', methods=['GET', 'POST'])
 def mainpage():
-    return render_template('mainpage.html', user=session['user'])
+    return render_template('mainpage.html')
 
 @app.route('/add_routes', methods=['GET', 'POST'])
 def add_routes():
-
     if request.method == 'GET':
+        selections = 'Add new climbing routes or boulder problems'
         query = 'SELECT CompanyName FROM companys'
         db.table = "companys"
         companies_avail = list(db.sql_query(query))
-        # selections = ''
-        # gyms_avail = []
-        # locations_avail = []
-        # grades_avail = []
-        # colours_avail = []
         session['step'] = 'step1'
         step = session.get('step', 'step1')
         return render_template('add_routes.html', step=step,  
-                           companies_avail=companies_avail)
-
+                           companies_avail=companies_avail, selections=selections)
     if request.method == 'POST':
-        
         # Step 1: Handle initial form submission
         if 'number_of_routes' in request.form and 'company' in request.form:
             number_of_routes = request.form['number_of_routes']
             session['number_of_routes'] = request.form['number_of_routes']
             session['company'] = request.form['company']
             session['step'] = 'step2'
-            selections = f"Adding {session['number_of_routes']} routes at {session['company']}"
+            selections = f"Adding {session['number_of_routes']} route/s at {session['company']}"
             # get list of available gyms
             query = 'SELECT Suburb FROM gyms WHERE CompanyName = %s'
             db.table = "gyms"
@@ -157,7 +143,6 @@ def add_routes():
             session['gym'] = request.form['gym']
             session['climb_type'] = request.form['climb_type']
             session['step'] = 'step3'
-            session['gradeSystem'] = 'no companies under that name in the company table'
             # get the grade system
             query = "SELECT * FROM companys WHERE CompanyName = %s"
             db.table = "companys"
@@ -178,7 +163,7 @@ def add_routes():
             db.table = "grades"
             query = "SELECT Grade FROM grades WHERE GradingSystem = %s"
             grades_avail = list(db.sql_query(query, (session['gradeSystem'],)))
-            selections = f"Adding {session['number_of_routes']} {str(session['climb_type']).lower()} routes at {session['company']} {session['gym']}"
+            selections = f"Adding {session['number_of_routes']} {str(session['climb_type']).lower()} route/s at {session['company']} {session['gym']}"
         
             step = session.get('step', 'step1')
             return render_template('add_routes.html', step=step, selections=selections,  
@@ -206,29 +191,115 @@ def add_routes():
             for i in range(int(number_of_routes)):
                 query = ('INSERT INTO routes (CreationDate, CompanyName, Suburb, Location, GradingSystem, Grade, Type_column, Colour, Existing, NumberHolds) '
                          'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)')
-                db.sql_do(query, (date, session['company'], session['gym'], routes[i]['location'], session['gradeSystem'], routes[i]['grade'], session['climb_type'], routes[i]['colour'], 1, routes[i]['nHolds']))
+                db.sql_do(query, (date, session['company'], session['gym'], routes[i]['location'], session['gradeSystem'], 
+                                  routes[i]['grade'], session['climb_type'], routes[i]['colour'], 1, routes[i]['nHolds']))
             session['routes'] = routes
-            session['step'] = 'success'
-            return redirect(url_for('success'))
-        
-    # step = session.get('step', 'step1')
-    # return render_template('add_routes.html', step=step, selections=selections, 
-    #                        companies_avail=companies_avail, gyms_avail=gyms_avail, 
-    #                        locations_avail=locations_avail, grades_avail=grades_avail,
-    #                        colours_avail=colours_avail)
-
-
-@app.route('/success')
-def success():
-    routes = session.get('routes', [])
-    return f"Form submitted successfully with routes: {routes}"
+            msg = 'Route/s added successfully'
+            return render_template('mainpage.html', msg=msg)
+    return render_template('add_routes.html')
 
 @app.route('/add_attempt', methods=['GET', 'POST'])
 def add_attempt():
-    date = datetime.now().date()
-    time = datetime.now().strftime('%H:%M:%S')
-    #functionality to add 
-    return render_template('add_attempt.html', user=session['user'])
+    if request.method == 'GET':
+        selections = 'Add new attempt'
+        query = 'SELECT CompanyName FROM companys'
+        db.table = "companys"
+        companies_avail = list(db.sql_query(query))
+        session['step'] = 'step1'
+        step = session.get('step', 'step1')
+        return render_template('add_attempt.html', step=step,  
+                           companies_avail=companies_avail, selections=selections)
+    if request.method == 'POST':
+        # Step 1: Handle initial form submission
+        if 'company' in request.form:
+            session['company'] = request.form['company']
+            session['step'] = 'step2'
+            selections = f"Adding attempt at {session['company']}"
+            # get list of available gyms
+            query = 'SELECT Suburb FROM gyms WHERE CompanyName = %s'
+            db.table = "gyms"
+            gyms_avail = list(db.sql_query(query, (session['company'],)))
+            step = session.get('step', 'step1')
+            return render_template('add_attempt.html', step=step, selections=selections, 
+                           gyms_avail=gyms_avail)
+        # Step 2: Handle gym and climb type submission
+        elif 'gym' in request.form and 'climb_type' in request.form:
+            session['gym'] = request.form['gym']
+            session['climb_type'] = request.form['climb_type']
+            session['step'] = 'step3'
+            selections = f"Adding {str(session['climb_type']).lower()} attempt at {session['company']} {session['gym']}"
+            # get lists of available locations and grades
+            db.table = "locations"
+            query = "SELECT Location FROM locations WHERE CompanyName = %s AND Suburb = %s AND Area = %s"
+            locations_avail = list(db.sql_query(query, (session['company'], session['gym'], session['climb_type'],)))
+            session['locals'] = locations_avail
+            step = session.get('step', 'step1')
+            return render_template('add_attempt.html', step=step, selections=selections,  
+                            locations_avail=locations_avail)
+        elif 'location' in request.form or session['step'] == 'step4':
+            session['location'] = request.form['location']
+            session['step'] = 'step4'
+            selections = f"Existing routes at location {session['location']}(please archive removed routes):"
+            step = session.get('step', 'step1')
+            # find routes at selected location and store details in list
+            query = "SELECT RID, CreationDate, Grade, Colour, NumberHolds FROM routes WHERE CompanyName = %s AND Suburb = %s AND Location = %s AND Existing = 1"
+            routes = list(db.sql_query(query, (session['company'], session['gym'], session['location'],)))
+            session['routes'] = routes
+            return render_template('add_attempt.html', step=step, selections=selections,  
+                            routes=routes)
+        elif session['step'] == 'step5':
+            attemptNo = request.form['attempt']
+            result = request.form['result']
+            rating = request.form['rating']
+            notes = request.form['notes']
+            if session['climb_type'] == 'sport':
+                mode = request.form['mode']
+            else:
+                mode = ''
+            video = request.form['video']
+            date = datetime.now().date()
+            time = datetime.now().strftime('%H:%M:%S')
+            #add new attempt
+            query = ("INSERT INTO attempts (Username, RID, Mode_column, AttemptNo, Date_column, Time_column, Result, Rating, Notes, Video)"
+                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
+            db.sql_do(query, (session['user'], session['RID'], mode, attemptNo, date, time, result, rating, notes, video))
+            #reload add attempt page using same company, gym and climb type
+            session['step'] = 'step3'
+            step = session.get('step', 'step1')
+            selections = 'Attempt added successfully, ready to add another'
+            #reset available locations
+            locations_avail = session['locals']
+            return render_template('add_attempt.html', step=step, selections=selections,  
+                            locations_avail=locations_avail)
+
+@app.route('/archiveRoute', methods=['GET', 'POST'])
+def archiveRoute():
+    if request.method == 'POST':
+        RID = request.form['RID']
+        query = "UPDATE routes SET Existing = 0 WHERE RID = %s"
+        db.sql_do(query, (RID,))
+        selections = f"Existing routes at location {session['location']}(please archive removed routes):"
+        session['step'] = 'step4'
+        step = session.get('step', 'step1')
+        query = "SELECT CreationDate, Grade, Colour, NumberHolds FROM routes WHERE CompanyName = %s AND Suburb = %s AND Location = %s AND Existing = 1"
+        routes = list(db.sql_query(query, (session['company'], session['gym'], session['location'],)))
+        return render_template('add_attempt.html', step=step, selections=selections, routes=routes)
+    return render_template('mainpage.html')
+
+@app.route('/selectRoute', methods=['GET', 'POST'])
+def selectRoute():
+    if request.method == 'POST':
+        session['RID'] = request.form['RID']
+        selections = "Route selected"
+        session['step'] = 'step5'
+        step = session.get('step', 'step1')
+        return render_template('add_attempt.html', step=step, selections=selections)
+    return render_template('mainpage.html')
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset():
+    #add post functionality to verify existing password and update pass in climbers table
+    return render_template('reset_password.html')
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -249,3 +320,8 @@ def sport_history():
 def browse():
     #functionality to view all user's bouldering videos
     return render_template('browse.html', user=session['user'])
+
+@app.route('/add_locations', methods=['GET', 'POST'])
+def add_locations():
+    #functionality to add new locations for a specific company & gym
+    return render_template('add_locations.html', user=session['user'])

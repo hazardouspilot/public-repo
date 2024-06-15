@@ -1,0 +1,127 @@
+{% extends 'layout.html' %}
+
+{% block title %}add_attempt{% endblock %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <p>{{ selections }}</p>
+    <form method="POST" action="/add_attempt">
+        {% if step == 'step1' %}
+            <!-- Step 1: Company -->
+            <label for="company">Company</label>
+            <select id="company" name="company" required>
+                <option value="">Select Company</option>
+                    {% for company in companies_avail %}
+                        <option value="{{ company[0] }}">{{ company[0] }}</option>
+                    {% endfor %}
+            </select>
+            <button type="submit">Next</button>
+        
+        {% elif step == 'step2' %}
+            <!-- Step 2: Gym and Climb Type -->
+            <label for="gym">Gym</label>
+            <select id="gym" name="gym" required>
+                <option value="">Select Gym</option>
+                    {% for gym in gyms_avail %}
+                        <option value="{{ gym[0] }}">{{ gym[0] }}</option>
+                    {% endfor %}
+            </select>
+
+            <label for="climb_type">Climb Type</label>
+            <select id="climb_type" name="climb_type" required>
+                <option value="">Select Climb Type</option>
+                <option value="sport">Sport</option>
+                <option value="boulder">Boulder</option>
+            </select>
+
+            <button type="submit">Next</button>
+        
+        {% elif step == 'step3' %}
+            <!-- Step 3: Location -->
+            <label for="location">Location</label>
+            <select id="location" name="location" required>
+                <option value="">Select Location</option>
+                    {% for local in locations_avail %}
+                        <option value="{{ local[0] }}">{{ local[0] }}</option>
+                    {% endfor %}
+            </select>
+
+            <button type="submit">Next</button>
+
+        {% elif step == 'step4' %}
+            {% for route in routes %}
+                <h3>Route {{ loop.index }}</h3>
+                <div>
+                    Date added (to database): {{ route[1] }}<br>
+                    Grade: {{ route[2] }}<br>
+                    Colour: {{ route[3] }}
+                </div>
+
+                {% if session['climb_type'] == "boulder" %}
+                    <t>Number of holds: {{ route[4] }}</t>
+                {% endif %}
+
+                <!-- change route to inactive and reload page at current step -->
+                <form action="{{ url_for('archiveRoute') }}" method="post">
+                    <input type="hidden" name="RID" value="{{ route[0] }}">
+                    <input type="submit" value="Archive">
+                </form>
+
+                <!-- save RID to session, update step to 5 and reload page -->
+                <form action="{{ url_for('selectRoute') }}" method="post">
+                    <input type="hidden" name="RID" value="{{ route[0] }}">
+                    <input type="submit" value="Select">
+                </form>
+
+            {% endfor %}
+            <!-- redirect to add_routes page -->
+            <form action="{{ url_for('add_routes') }}" method="GET">
+                <input type="submit" value="Add new route/s">
+            </form>
+
+        {% elif step == 'step5' %}
+            
+            {% if session['climb_type'] == 'sport' %}
+                <label for="mode">Method</label>
+                <select id="mode" name="mode" required>
+                    <option value="">How'd you do it?</option>
+                    <option value="auto">Auto Belay</option>
+                    <option value="top">Top Rope</option>
+                    <option value="lead">Lead</option>
+                </select>
+            {% endif %}
+
+            <label for="attempt">Attempt No.</label>
+            <input type="number" id="attempt" name="attempt" required min="1" max="20" step="1">
+
+            <label for="result">Result</label>
+            <select id="result" name="result" required>
+                <option value="">How'd you go?</option>
+                <option value="morethan1fall">>1 Fall</option>
+                <option value="morethan1rest">>1 Rest</option>
+                <option value="1fall">1 Fall</option>
+                <option value="1rest">1 Rest</option>
+                <option value="failed">Failed</option>
+                <option value="sent">Sent</option>
+            </select>
+
+            <label for="rating">Difficulty for grade (5 = hard)</label>
+            <input type="number" id="rating" name="rating" required min="1" max="5" step="1">
+            
+            <label for="notes">Notes: </label>
+            <input type="text" id="notes" name="notes" required>
+
+            <label for="video">Video evidence</label>
+            <input type="file" id="video" name="video" accept="video/*">
+        
+            <button type="submit">Submit</button>
+
+        {% endif %}
+    </form>
+</body>
+</html>
+
+{% endblock %}
