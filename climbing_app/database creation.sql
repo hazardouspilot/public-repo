@@ -22,6 +22,8 @@ DROP TABLE Companys;
 
 DROP TABLE Grades;
 
+DROP TABLE Colours;
+
 -- Create Grade table
 CREATE TABLE Grades (
     GradingSystem VARCHAR(50),
@@ -73,6 +75,7 @@ CREATE TABLE Locations (
     CompanyName VARCHAR(50),
     Suburb VARCHAR(50),
     Location VARCHAR(50),
+    Area VARCHAR(50) Default 'sport',
     PRIMARY KEY (CompanyName, Suburb, Location),
     FOREIGN KEY (CompanyName, Suburb) REFERENCES Gyms (CompanyName, Suburb)
 );
@@ -91,9 +94,18 @@ CREATE TABLE PrivacyPrefs (
 -- Create Result table
 CREATE TABLE Results ( Result VARCHAR(50) PRIMARY KEY );
 
+-- Create Colour table
+CREATE TABLE Colours (
+    CompanyName VARCHAR(50),
+    Colour VARCHAR(50),
+    PRIMARY KEY (CompanyName, Colour),
+    FOREIGN KEY (CompanyName) REFERENCES Companys (CompanyName)
+);
+
 -- Create Route table
 CREATE TABLE Routes (
     RID INTEGER AUTO_INCREMENT PRIMARY KEY,
+    CreationDate DATE,
     CompanyName VARCHAR(50),
     Suburb VARCHAR(50),
     Location VARCHAR(50),
@@ -101,11 +113,13 @@ CREATE TABLE Routes (
     Grade VARCHAR(50),
     Type_column VARCHAR(50),
     Colour VARCHAR(50),
+    NumberHolds INTEGER DEFAULT 0,
     Existing INTEGER,
     FOREIGN KEY (CompanyName, Suburb) REFERENCES Gyms (CompanyName, Suburb),
     FOREIGN KEY (GradingSystem, Grade) REFERENCES Grades (GradingSystem, Grade),
     FOREIGN KEY (CompanyName, Suburb, Location) REFERENCES Locations (CompanyName, Suburb, Location),
-    FOREIGN KEY (Type_column) REFERENCES Type_table (Type_column)
+    FOREIGN KEY (Type_column) REFERENCES Type_table (Type_column),
+    FOREIGN KEY (CompanyName, Colour) REFERENCES Colours (CompanyName, Colour)
 );
 
 -- Create Attempt table
