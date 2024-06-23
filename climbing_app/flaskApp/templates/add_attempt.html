@@ -59,19 +59,20 @@
                     Grade: {{ route[2] }}<br>
                     Colour: {{ route[3] }}
                 </div>
+                <!-- above text has strange format in website -->
 
                 {% if session['climb_type'] == "boulder" %}
                     <t>Number of holds: {{ route[4] }}</t>
                 {% endif %}
 
                 <!-- change route to inactive and reload page at current step -->
-                <form action="{{ url_for('archiveRoute') }}" method="post">
+                <form action="{{ url_for('archiveRoute') }}" method="POST">
                     <input type="hidden" name="RID" value="{{ route[0] }}">
                     <input type="submit" value="Archive">
                 </form>
 
                 <!-- save RID to session, update step to 5 and reload page -->
-                <form action="{{ url_for('selectRoute') }}" method="post">
+                <form action="{{ url_for('selectRoute') }}" method="POST">
                     <input type="hidden" name="RID" value="{{ route[0] }}">
                     <input type="submit" value="Select">
                 </form>
@@ -116,6 +117,7 @@
 
             <label for="video">Video evidence</label>
             <input type="file" id="video" name="video" accept="video/*">
+            <button type="submit">Upload</button>
         
             <button type="submit">Submit</button>
 

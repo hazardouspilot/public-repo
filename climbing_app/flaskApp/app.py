@@ -115,7 +115,7 @@ def add_routes():
     if request.method == 'GET':
         selections = 'Add new climbing routes or boulder problems'
         query = 'SELECT CompanyName FROM companys'
-        db.table = "companys"
+        db.table = "companys" #needed?
         companies_avail = list(db.sql_query(query))
         session['step'] = 'step1'
         step = session.get('step', 'step1')
@@ -131,7 +131,7 @@ def add_routes():
             selections = f"Adding {session['number_of_routes']} route/s at {session['company']}"
             # get list of available gyms
             query = 'SELECT Suburb FROM gyms WHERE CompanyName = %s'
-            db.table = "gyms"
+            db.table = "gyms" #needed?
             gyms_avail = list(db.sql_query(query, (session['company'],)))
             
             step = session.get('step', 'step1')
@@ -145,7 +145,7 @@ def add_routes():
             session['step'] = 'step3'
             # get the grade system
             query = "SELECT * FROM companys WHERE CompanyName = %s"
-            db.table = "companys"
+            db.table = "companys" #needed?
             result = list(db.sql_query(query, (session['company'],)))
             if session['climb_type'] == "boulder":
                 if result:
@@ -154,13 +154,13 @@ def add_routes():
                 if result:
                     session['gradeSystem'] = result[0][2]
             query = "SELECT Colour FROM colours WHERE CompanyName = %s"
-            db.table = "colours"
+            db.table = "colours" #needed?
             colours_avail = list(db.sql_query(query, (session['company'],)))
             # get lists of available locations and grades
-            db.table = "locations"
+            db.table = "locations" #needed?
             query = "SELECT Location FROM locations WHERE CompanyName = %s AND Suburb = %s AND Area = %s"
             locations_avail = list(db.sql_query(query, (session['company'], session['gym'], session['climb_type'],)))
-            db.table = "grades"
+            db.table = "grades" #needed?
             query = "SELECT Grade FROM grades WHERE GradingSystem = %s"
             grades_avail = list(db.sql_query(query, (session['gradeSystem'],)))
             selections = f"Adding {session['number_of_routes']} {str(session['climb_type']).lower()} route/s at {session['company']} {session['gym']}"
@@ -187,7 +187,7 @@ def add_routes():
                 routes.append(route)
             date = datetime.now().date()
             # Save to session or process data as needed
-            db.table = 'routes'
+            db.table = 'routes' #needed?
             for i in range(int(number_of_routes)):
                 query = ('INSERT INTO routes (CreationDate, CompanyName, Suburb, Location, GradingSystem, Grade, Type_column, Colour, Existing, NumberHolds) '
                          'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)')
@@ -203,12 +203,13 @@ def add_attempt():
     if request.method == 'GET':
         selections = 'Add new attempt'
         query = 'SELECT CompanyName FROM companys'
-        db.table = "companys"
+        db.table = "companys" #needed?
         companies_avail = list(db.sql_query(query))
         session['step'] = 'step1'
         step = session.get('step', 'step1')
         return render_template('add_attempt.html', step=step,  
                            companies_avail=companies_avail, selections=selections)
+    
     if request.method == 'POST':
         # Step 1: Handle initial form submission
         if 'company' in request.form:
@@ -217,7 +218,7 @@ def add_attempt():
             selections = f"Adding attempt at {session['company']}"
             # get list of available gyms
             query = 'SELECT Suburb FROM gyms WHERE CompanyName = %s'
-            db.table = "gyms"
+            db.table = "gyms" #needed?
             gyms_avail = list(db.sql_query(query, (session['company'],)))
             step = session.get('step', 'step1')
             return render_template('add_attempt.html', step=step, selections=selections, 
@@ -229,7 +230,7 @@ def add_attempt():
             session['step'] = 'step3'
             selections = f"Adding {str(session['climb_type']).lower()} attempt at {session['company']} {session['gym']}"
             # get lists of available locations and grades
-            db.table = "locations"
+            db.table = "locations" #needed?
             query = "SELECT Location FROM locations WHERE CompanyName = %s AND Suburb = %s AND Area = %s"
             locations_avail = list(db.sql_query(query, (session['company'], session['gym'], session['climb_type'],)))
             session['locals'] = locations_avail
@@ -237,7 +238,10 @@ def add_attempt():
             return render_template('add_attempt.html', step=step, selections=selections,  
                             locations_avail=locations_avail)
         elif 'location' in request.form or session['step'] == 'step4':
-            session['location'] = request.form['location']
+            try:
+                session['location'] = request.form['location']
+            except:
+                print("add_attempt loaded at step 4 without location form input")
             session['step'] = 'step4'
             selections = f"Existing routes at location {session['location']}(please archive removed routes):"
             step = session.get('step', 'step1')
@@ -257,6 +261,7 @@ def add_attempt():
             else:
                 mode = ''
             video = request.form['video']
+            
             date = datetime.now().date()
             time = datetime.now().strftime('%H:%M:%S')
             #add new attempt
@@ -272,16 +277,17 @@ def add_attempt():
             return render_template('add_attempt.html', step=step, selections=selections,  
                             locations_avail=locations_avail)
 
-@app.route('/archiveRoute', methods=['GET', 'POST'])
+@app.route('/archiveRoute', methods=['POST'])
 def archiveRoute():
     if request.method == 'POST':
         RID = request.form['RID']
+        print(f"Route ID to be archived: {RID}")
         query = "UPDATE routes SET Existing = 0 WHERE RID = %s"
         db.sql_do(query, (RID,))
-        selections = f"Existing routes at location {session['location']}(please archive removed routes):"
+        selections = f"Existing routes at location {session['location']} (please archive removed routes):"
         session['step'] = 'step4'
         step = session.get('step', 'step1')
-        query = "SELECT CreationDate, Grade, Colour, NumberHolds FROM routes WHERE CompanyName = %s AND Suburb = %s AND Location = %s AND Existing = 1"
+        query = "SELECT RID, CreationDate, Grade, Colour, NumberHolds FROM routes WHERE CompanyName = %s AND Suburb = %s AND Location = %s AND Existing = 1"
         routes = list(db.sql_query(query, (session['company'], session['gym'], session['location'],)))
         return render_template('add_attempt.html', step=step, selections=selections, routes=routes)
     return render_template('mainpage.html')
@@ -289,10 +295,12 @@ def archiveRoute():
 @app.route('/selectRoute', methods=['GET', 'POST'])
 def selectRoute():
     if request.method == 'POST':
+
         session['RID'] = request.form['RID']
         selections = "Route selected"
         session['step'] = 'step5'
         step = session.get('step', 'step1')
+        print(f"Step updated to {step} by selectRoute function")
         return render_template('add_attempt.html', step=step, selections=selections)
     return render_template('mainpage.html')
 
@@ -318,8 +326,9 @@ def sport_history():
 
 @app.route('/browse', methods=['GET', 'POST'])
 def browse():
-    #functionality to view all user's bouldering videos
-    return render_template('browse.html', user=session['user'])
+    query = "SELECT Video FROM attempts"
+    videos = db.sql_query(query)
+    return render_template('browse.html', videos=videos)
 
 @app.route('/add_locations', methods=['GET', 'POST'])
 def add_locations():

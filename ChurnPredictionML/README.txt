@@ -4,3 +4,6 @@ restriction being that it could not be time series data.
 It is the main project for Machine Learning, in which I clean and 
 vizualise a churn dataset (phase 1) and carry out feature selection, 
 tune 4 ML models using the data and evaluate the models (phase 2). 
+
+After the semester I added Light_GBM as a third phase where I test out 
+an boosted ensemble model to see if I can acheive better results.
