@@ -2,7 +2,7 @@
 
 import re
 from flask import Flask, render_template, request, redirect, url_for, session
-from Database_Class import BWDB
+from Azure_Database_Class import azureSQLdb
 from datetime import datetime
 from util import hash_pass, verify_pass
 
@@ -10,28 +10,33 @@ app = Flask(__name__)
 
 app.secret_key = 'unguessable-key'
 
-MY_HOST = "localhost"
-MY_USER = "root"
-MY_PASS = "ClimbingShoes"
-DATABASE = "climbing_mysql"
+#configure database connection
+MY_HOST = "climbing-database-server.database.windows.net,1433"
+MY_USER = "CloudSAc013d50c@climbing-database-server"
+MY_PASS = "z85nB22htMNj$yiP"
+DATABASE = "climbing-database"
 
-db = BWDB(
-    dbms="mysql", host=MY_HOST, user=MY_USER, 
+#create database from class in Azure_Database_Class.py
+db = azureSQLdb(
+    dbms="sqlserver", host=MY_HOST, user=MY_USER, 
     password=MY_PASS, database=DATABASE
 )
 
+#log in page
 @app.route('/', methods=['GET', 'POST'])
 def home():
     # Output message if something goes wrong...
     msg = False
     email = ''
+
     # Check if "username" and "password" POST requests exist (user submitted form)
     if request.method == 'POST':
         # Create variables for easy access
         email = request.form['email']
         password = request.form['password']
         
-        query = f"SELECT Username, Pass FROM climbers WHERE Email = '{email}'"
+
+        query = f"SELECT Username, Pass FROM Climbers WHERE Email = '{email}'"
         
         # details for matching climber
         climber_iterator = db.sql_query(query)
@@ -72,7 +77,7 @@ def register():
         username = request.form['username']
         password = request.form['password']
         # Check if email is already registered
-        query = 'SELECT * FROM climbers WHERE Email = %s'
+        query = 'SELECT * FROM Climbers WHERE Email = ?'
 
         account_iterator = db.sql_query(query, (email,))
         account = next(account_iterator, None)
@@ -81,7 +86,7 @@ def register():
             msg = 'Email already registered'
             return render_template('register.html', msg=msg, email=email)
         # Check if username is available
-        query = 'SELECT * FROM climbers WHERE Username = %s'
+        query = 'SELECT * FROM Climbers WHERE Username = ?'
         
         account_iterator = db.sql_query(query, (username,))
         account = next(account_iterator, None)
@@ -99,7 +104,7 @@ def register():
             if isinstance(password, bytes):
                 password = password.decode('utf-8')
             # Account doesn't exist, and the form data is valid, so insert the new account into the accounts table
-            query = 'INSERT INTO climbers (Username, Pass, Email) VALUES (%s, %s, %s)'
+            query = 'INSERT INTO Climbers (Username, Pass, Email) VALUES (?, ?, ?)'
             
             db.sql_do(query, (username, password, email))
             msg = 'You have been registered'
@@ -114,7 +119,7 @@ def mainpage():
 def add_routes():
     if request.method == 'GET':
         selections = 'Add new climbing routes or boulder problems'
-        query = 'SELECT CompanyName FROM companys'
+        query = 'SELECT CompanyName FROM Companys'
         db.table = "companys" #needed?
         companies_avail = list(db.sql_query(query))
         session['step'] = 'step1'
@@ -130,7 +135,7 @@ def add_routes():
             session['step'] = 'step2'
             selections = f"Adding {session['number_of_routes']} route/s at {session['company']}"
             # get list of available gyms
-            query = 'SELECT Suburb FROM gyms WHERE CompanyName = %s'
+            query = 'SELECT Suburb FROM Gyms WHERE CompanyName = ?'
             db.table = "gyms" #needed?
             gyms_avail = list(db.sql_query(query, (session['company'],)))
             
@@ -144,24 +149,27 @@ def add_routes():
             session['climb_type'] = request.form['climb_type']
             session['step'] = 'step3'
             # get the grade system
-            query = "SELECT * FROM companys WHERE CompanyName = %s"
-            db.table = "companys" #needed?
+            query = "SELECT * FROM Companys WHERE CompanyName = ?"
+            
             result = list(db.sql_query(query, (session['company'],)))
-            if session['climb_type'] == "boulder":
+            print(result)
+            print(session['climb_type'])
+            if str(session['climb_type']).lower() == "boulder":
                 if result:
                     session['gradeSystem'] = result[0][1]
-            elif session['climb_type'] == "sport":
+            elif str(session['climb_type']).lower() == "sport":
                 if result:
                     session['gradeSystem'] = result[0][2]
-            query = "SELECT Colour FROM colours WHERE CompanyName = %s"
-            db.table = "colours" #needed?
+            
+            query = "SELECT Colour FROM Colours WHERE CompanyName = ?"
+            
             colours_avail = list(db.sql_query(query, (session['company'],)))
             # get lists of available locations and grades
-            db.table = "locations" #needed?
-            query = "SELECT Location FROM locations WHERE CompanyName = %s AND Suburb = %s AND Area = %s"
-            locations_avail = list(db.sql_query(query, (session['company'], session['gym'], session['climb_type'],)))
-            db.table = "grades" #needed?
-            query = "SELECT Grade FROM grades WHERE GradingSystem = %s"
+            
+            query = "SELECT Location FROM Locations WHERE CompanyName = ? AND Suburb = ?"
+            locations_avail = list(db.sql_query(query, (session['company'], session['gym'],)))
+            
+            query = "SELECT Grade FROM Grades WHERE GradingSystem = ?"
             grades_avail = list(db.sql_query(query, (session['gradeSystem'],)))
             selections = f"Adding {session['number_of_routes']} {str(session['climb_type']).lower()} route/s at {session['company']} {session['gym']}"
         
@@ -190,7 +198,7 @@ def add_routes():
             db.table = 'routes' #needed?
             for i in range(int(number_of_routes)):
                 query = ('INSERT INTO routes (CreationDate, CompanyName, Suburb, Location, GradingSystem, Grade, Type_column, Colour, Existing, NumberHolds) '
-                         'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)')
+                         'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
                 db.sql_do(query, (date, session['company'], session['gym'], routes[i]['location'], session['gradeSystem'], 
                                   routes[i]['grade'], session['climb_type'], routes[i]['colour'], 1, routes[i]['nHolds']))
             session['routes'] = routes
@@ -202,8 +210,8 @@ def add_routes():
 def add_attempt():
     if request.method == 'GET':
         selections = 'Add new attempt'
-        query = 'SELECT CompanyName FROM companys'
-        db.table = "companys" #needed?
+        query = 'SELECT CompanyName FROM Companys'
+        
         companies_avail = list(db.sql_query(query))
         session['step'] = 'step1'
         step = session.get('step', 'step1')
@@ -217,8 +225,8 @@ def add_attempt():
             session['step'] = 'step2'
             selections = f"Adding attempt at {session['company']}"
             # get list of available gyms
-            query = 'SELECT Suburb FROM gyms WHERE CompanyName = %s'
-            db.table = "gyms" #needed?
+            query = 'SELECT Suburb FROM Gyms WHERE CompanyName = ?'
+            
             gyms_avail = list(db.sql_query(query, (session['company'],)))
             step = session.get('step', 'step1')
             return render_template('add_attempt.html', step=step, selections=selections, 
@@ -230,13 +238,16 @@ def add_attempt():
             session['step'] = 'step3'
             selections = f"Adding {str(session['climb_type']).lower()} attempt at {session['company']} {session['gym']}"
             # get lists of available locations and grades
-            db.table = "locations" #needed?
-            query = "SELECT Location FROM locations WHERE CompanyName = %s AND Suburb = %s AND Area = %s"
-            locations_avail = list(db.sql_query(query, (session['company'], session['gym'], session['climb_type'],)))
+            
+            query = "SELECT Location FROM Locations WHERE CompanyName = ? AND Suburb = ?"
+            # locations_avail = list(db.sql_query(query, (session['company'], session['gym'])))
+            locations_result = list(db.sql_query(query, (session['company'], session['gym'])))
+            locations_avail = [location[0] for location in locations_result]
             session['locals'] = locations_avail
             step = session.get('step', 'step1')
             return render_template('add_attempt.html', step=step, selections=selections,  
                             locations_avail=locations_avail)
+        # Step 3: Handle location submission
         elif 'location' in request.form or session['step'] == 'step4':
             try:
                 session['location'] = request.form['location']
@@ -246,11 +257,12 @@ def add_attempt():
             selections = f"Existing routes at location {session['location']}(please archive removed routes):"
             step = session.get('step', 'step1')
             # find routes at selected location and store details in list
-            query = "SELECT RID, CreationDate, Grade, Colour, NumberHolds FROM routes WHERE CompanyName = %s AND Suburb = %s AND Location = %s AND Existing = 1"
+            query = "SELECT RID, CreationDate, Grade, Colour, NumberHolds FROM Routes WHERE CompanyName = ? AND Suburb = ? AND Location = ? AND Existing = 1"
             routes = list(db.sql_query(query, (session['company'], session['gym'], session['location'],)))
-            session['routes'] = routes
+            
             return render_template('add_attempt.html', step=step, selections=selections,  
                             routes=routes)
+        # Step 4: Handle final attempt details submission and update database
         elif session['step'] == 'step5':
             attemptNo = request.form['attempt']
             result = request.form['result']
@@ -260,18 +272,39 @@ def add_attempt():
                 mode = request.form['mode']
             else:
                 mode = ''
-            video = request.form['video']
-            
-            date = datetime.now().date()
-            time = datetime.now().strftime('%H:%M:%S')
+
+            # Handle video file upload
+            video_data = None
+            if 'video' in request.files:
+                video = request.files['video']
+                if video.filename != '':
+                    # Read the file data
+                    video_data = video.read()
+            # Format date and time for SQL Server
+            current_datetime = datetime.now()
+            date = current_datetime.strftime('%Y-%m-%d')
+            time = current_datetime.strftime('%H:%M:%S')
+
+            #check for duplicate attempt entries
+            query = ("SELECT * FROM Attempts WHERE Username = ? AND RID = ? AND Mode_column = ? AND AttemptNo = ?")
+            duplicates = list(db.sql_query(query, (session['user'], session['RID'], mode, attemptNo, )))
+            if len(duplicates) > 0:
+                step = session.get('step', 'step1')
+                selections = 'You have already logged an attempt with these details, if this is a new attempt, use a higher attempt number'
+                query = "SELECT RID, CreationDate, Grade, Colour, NumberHolds FROM Routes WHERE CompanyName = ? AND Suburb = ? AND Location = ? AND Existing = 1"
+                routes = list(db.sql_query(query, (session['company'], session['gym'], session['location'],)))
+                return render_template('add_attempt.html', step=step, selections=selections,  
+                            routes=routes)
+
             #add new attempt
-            query = ("INSERT INTO attempts (Username, RID, Mode_column, AttemptNo, Date_column, Time_column, Result, Rating, Notes, Video)"
-                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
-            db.sql_do(query, (session['user'], session['RID'], mode, attemptNo, date, time, result, rating, notes, video))
+            query = ("INSERT INTO Attempts (Username, RID, Mode_column, AttemptNo, Date_column, Time_column, Result, Rating, Notes, Video)"
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            db.sql_do(query, (session['user'], session['RID'], mode, attemptNo, date, time, result, rating, notes, video_data))
             #reload add attempt page using same company, gym and climb type
             session['step'] = 'step3'
             step = session.get('step', 'step1')
             selections = 'Attempt added successfully, ready to add another'
+
             #reset available locations
             locations_avail = session['locals']
             return render_template('add_attempt.html', step=step, selections=selections,  
@@ -282,12 +315,12 @@ def archiveRoute():
     if request.method == 'POST':
         RID = request.form['RID']
         print(f"Route ID to be archived: {RID}")
-        query = "UPDATE routes SET Existing = 0 WHERE RID = %s"
+        query = "UPDATE routes SET Existing = 0 WHERE RID = ?"
         db.sql_do(query, (RID,))
         selections = f"Existing routes at location {session['location']} (please archive removed routes):"
         session['step'] = 'step4'
         step = session.get('step', 'step1')
-        query = "SELECT RID, CreationDate, Grade, Colour, NumberHolds FROM routes WHERE CompanyName = %s AND Suburb = %s AND Location = %s AND Existing = 1"
+        query = "SELECT RID, CreationDate, Grade, Colour, NumberHolds FROM Routes WHERE CompanyName = ? AND Suburb = ? AND Location = ? AND Existing = 1"
         routes = list(db.sql_query(query, (session['company'], session['gym'], session['location'],)))
         return render_template('add_attempt.html', step=step, selections=selections, routes=routes)
     return render_template('mainpage.html')
@@ -326,7 +359,7 @@ def sport_history():
 
 @app.route('/browse', methods=['GET', 'POST'])
 def browse():
-    query = "SELECT Video FROM attempts"
+    query = "SELECT Video FROM Attempts"
     videos = db.sql_query(query)
     return render_template('browse.html', videos=videos)
 

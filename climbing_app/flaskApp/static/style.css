@@ -146,3 +146,62 @@ body.loggedin {
   padding: 5px;
   margin: 0 0 10px 0;
 }
+
+/* General styles */
+.container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+    margin: 50px auto;
+}
+
+/* Header style */
+h1 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Paragraph style */
+p {
+    color: #666;
+}
+
+/* Form and button styles */
+form {
+    margin: 10px 0;
+}
+
+input[type="submit"] {
+    background-color: #3274d6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+input[type="submit"]:hover {
+    background-color: #2868c7;
+    transition: background-color 0.3s;
+}
+
+/* Menu buttons container */
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.menu-buttons form {
+    width: 100%;
+}
+
+.menu-buttons input[type="submit"] {
+    width: 100%;
+    margin-bottom: 10px;
+}

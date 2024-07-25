@@ -4,27 +4,32 @@
 
 {% block content %}
 
-<h1>Main Menu</h1>
+<div class="container">
 
-{% if msg %}
+    <h1>Main Menu</h1>
 
-<p>{{ msg }}</p>
+    {% if msg %}
 
-{% endif %}
+    <p>{{ msg }}</p>
 
-<p>Current user: {{ session['user'] }}</p>
+    {% endif %}
 
-<form action="{{ url_for('add_attempt') }}" method="get">
-    <input type="submit" value="Add a new attempt">
-</form>
+    <p>Current user: {{ session['user'] }}</p>
 
-<form action="{{ url_for('add_routes') }}" method="get">
-    <input type="submit" value="Add a new route">
-</form>
+    <div class="menu-buttons">
+        <form action="{{ url_for('add_attempt') }}" method="get">
+            <input type="submit" value="Add a new attempt">
+        </form>
 
-<form action="{{ url_for('profile') }}" method="get">
-    <input type="submit" value="Edit your profile">
-</form>
+        <form action="{{ url_for('add_routes') }}" method="get">
+            <input type="submit" value="Add a new route">
+        </form>
+
+        <form action="{{ url_for('profile') }}" method="get">
+            <input type="submit" value="Edit your profile">
+        </form>
+    </div>
+</div>
 <!-- 
 <form action="{{ url_for('boulder_history') }}" method="get">
     <input type="submit" value="View your boulder history">

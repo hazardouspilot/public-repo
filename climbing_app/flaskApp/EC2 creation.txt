@@ -1,0 +1,133 @@
+Create EC2 - IAM instance profile: select LabInstanceProfile
+Link via SSH (PuTTY) to EC2 - 
+using private key = .ppk file
+hostname = ubuntu@[your_instance_public_DNS]
+connection 300s
+
+Install stuff on EC2 instance:
+
+determine the python version:
+'python3 --version' - version = 3.10.12
+
+mkdir app
+cd app
+
+update package list:
+sudo apt update
+sudo apt install python3-pip
+
+pip install pipenv
+
+sudo apt install pipenv
+sudo apt install nginx
+sudo apt install gunicorn
+sudo apt install python3-pyodbc
+
+check nginx with:
+systemctl status nginx -> q to quit
+
+sudo nano /etc/nginx/sites-enabled/default
+
+        index index.html index.htm index.nginx-debian.html add_attempts.html add_routes.html boulder_history.html br>
+
+	server_name ec2-34-230-81-80.compute-1.amazonaws.com;
+
+	location / {
+		proxy_pass http://127.0.0.1:5000;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+ctrl + O to save
+enter
+ctrl + X to exit
+
+pipenv install
+pipenv shell
+pipenv install flask
+pipenv install boto3
+pipenv install werkzeug
+pipenv install jinja2
+pipenv install gunicorn
+pipenv install requests
+pipenv install pyodbc
+pipenv install datetime
+
+install drivert for database communications:
+
+sudo apt-get update
+sudo apt-get upgrade -y
+curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+#ensure ubuntu version is correct
+sudo add-apt-repository "$(curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list)"
+sudo apt-get update
+sudo apt-get install -y msodbcsql18
+odbcinst -q -d -n "ODBC Driver 18 for SQL Server"
+
+
+Filezilla
+File-site manager-new site-
+SFTP-
+host=[your_instance_public_DNS]-
+port=22-
+login type:key file-
+browse:.ppk-
+user=ubuntu-
+connect
+
+place app.py, util.py, Azure_Database_Class.py files, template and static folders into /home/ubuntu/app
+
+sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/app
+sudo nano /etc/nginx/sites-available/app
+
+server {
+        listen 80;
+        server_name [your_instance_public_DNS];
+
+        index index.html index.htm index.nginx-debian.html add_attempts.html add_routes.html boulder_history.html browse.html home.html layout.html mainpage.html profile.html register.html reset_password.html sport_history.html 
+
+        location / {
+                proxy_pass http://127.0.0.1:5000; 
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+        }
+}
+
+ctrl + O to save
+enter
+ctrl + X to exit
+
+sudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/
+
+sudo rm /etc/nginx/sites-available/default
+sudo chmod -R 777 /etc/nginx/sites-enabled
+sudo rm /etc/nginx/sites-enabled/default
+
+sudo nginx -t
+
+if test successful:
+sudo systemctl reload nginx
+
+gunicorn "app:app" -b 0.0.0.0 --daemon
+
+flask run
+
+keep flask running when terminal closed:
+nohup flask run --host=0.0.0.0 &
+
+check if still running:
+ps aux | grep flask
+
+kill it:
+ps aux | grep flask
+kill PID -> replace PID with process ID of flask app
+
+Generate and associate static IP with ec2 instance - public DNS and IP address will change
+
+reconnect through PuTTY and update DNS address at /etc/nginx/sites-available/app
+
+add new ec2 IP address to firewall rule on datebase server
